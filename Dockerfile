@@ -1,25 +1,11 @@
-# Use official OpenJDK image
-FROM eclipse-temurin:17-jdk-alpine
-
-# Set working directory
+FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /app
+COPY . .
+RUN mvn clean package -DskipTests
 
-# Copy Maven wrapper and pom
-COPY mvnw .
-COPY .mvn .mvn
-COPY pom.xml .
+FROM eclipse-temurin:17-jdk-alpine
+WORKDIR /app
+COPY --from=build /app/target/*.jar app.jar
 
-# Download dependencies
-RUN ./mvnw dependency:go-offline
-
-# Copy source code
-COPY src src
-
-# Build application
-RUN ./mvnw clean package -DskipTests
-
-# Expose port
 EXPOSE 8080
-
-# Run jar
-CMD ["java","-jar","target/*.jar"]
+ENTRYPOINT ["java","-jar","app.jar"]
